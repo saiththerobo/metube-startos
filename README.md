@@ -1,16 +1,12 @@
 <p align="center">
-  <img src="icon.svg" alt="Hello World Logo" width="21%">
+  <img src="icon.svg" alt="MeTube Logo" width="21%">
 </p>
 
-# Hello World on StartOS
+# MeTube on StartOS
 
-> **Upstream repo:** <https://github.com/Start9Labs/hello-world>
+> **Upstream repo:** <https://github.com/alexta69/metube>
 
-A minimal reference service for StartOS. It displays a simple web page — nothing more. Use [this repository](https://github.com/Start9Labs/hello-world-startos) as a template when packaging a new service for StartOS.
-
-## Getting Started
-
-To learn how to use this template to create your own StartOS service package, see the [Packaging Guide](https://docs.start9.com/packaging).
+MeTube is a self-hosted web UI for yt-dlp that lets you download videos and audio from YouTube, Vimeo, SoundCloud, and hundreds of other sites. Paste a URL, pick a format, and your media is saved directly on your server.
 
 ---
 
@@ -19,14 +15,11 @@ To learn how to use this template to create your own StartOS service package, se
 - [Image and Container Runtime](#image-and-container-runtime)
 - [Volume and Data Layout](#volume-and-data-layout)
 - [Installation and First-Run Flow](#installation-and-first-run-flow)
-- [Configuration Management](#configuration-management)
 - [Network Access and Interfaces](#network-access-and-interfaces)
 - [Actions (StartOS UI)](#actions-startos-ui)
 - [Backups and Restore](#backups-and-restore)
 - [Health Checks](#health-checks)
 - [Dependencies](#dependencies)
-- [Limitations and Differences](#limitations-and-differences)
-- [What Is Unchanged from Upstream](#what-is-unchanged-from-upstream)
 - [Contributing](#contributing)
 - [Quick Reference for AI Consumers](#quick-reference-for-ai-consumers)
 
@@ -34,39 +27,39 @@ To learn how to use this template to create your own StartOS service package, se
 
 ## Image and Container Runtime
 
-| Property      | Value                                  |
-| ------------- | -------------------------------------- |
-| Image         | `ghcr.io/start9labs/hello-world`       |
-| Architectures | x86_64, aarch64, riscv64               |
-| Command       | `hello-world`                          |
+| Property      | Value                        |
+| ------------- | ---------------------------- |
+| Image         | `alexta69/metube`            |
+| Architectures | x86_64, aarch64              |
+| Port          | 8081                         |
 
 ---
 
 ## Volume and Data Layout
 
-| Volume | Mount Point | Purpose         |
-| ------ | ----------- | --------------- |
-| `main` | `/data`     | Persistent data |
+| Volume      | Mount Point | Purpose                              |
+| ----------- | ----------- | ------------------------------------ |
+| `main`      | `/config`   | Package state (store.json)           |
+| `downloads` | `/downloads`| Downloaded files (local mode)        |
+
+When File Browser mode is selected the filebrowser `data` volume is mounted at `/mnt/filebrowser` and downloads go to `/mnt/filebrowser/metube-downloads`.
 
 ---
 
 ## Installation and First-Run Flow
 
-No special setup. Install and start — the web page is immediately available.
+On first install a critical task prompts the user to choose a **Download Destination**:
 
----
-
-## Configuration Management
-
-No configurable settings. The service runs with no user-facing configuration.
+- **Local Storage** — files saved to the `downloads` volume on-device
+- **File Browser** — files saved into the File Browser dependency's data volume (requires File Browser to be installed)
 
 ---
 
 ## Network Access and Interfaces
 
-| Interface | Port | Protocol | Purpose              |
-| --------- | ---- | -------- | -------------------- |
-| Web UI    | 80   | HTTP     | Hello World web page |
+| Interface | Port | Protocol | Purpose          |
+| --------- | ---- | -------- | ---------------- |
+| Web UI    | 8081 | HTTP     | MeTube web UI    |
 
 **Access methods:**
 
@@ -79,7 +72,9 @@ No configurable settings. The service runs with no user-facing configuration.
 
 ## Actions (StartOS UI)
 
-None.
+| Action                     | Description                                        |
+| -------------------------- | -------------------------------------------------- |
+| Select Download Destination | Switch between Local Storage and File Browser      |
 
 ---
 
@@ -87,7 +82,7 @@ None.
 
 **Included in backup:**
 
-- `main` volume
+- `main` volume (package state)
 
 **Restore behavior:** Volume is fully restored before the service starts.
 
@@ -95,27 +90,17 @@ None.
 
 ## Health Checks
 
-| Check         | Method              | Messages                                                           |
-| ------------- | ------------------- | ------------------------------------------------------------------ |
-| Web Interface | Port listening (80) | Success: "The web interface is ready" / Error: "The web interface is not ready" |
+| Check         | Method                | Messages                                                                        |
+| ------------- | --------------------- | ------------------------------------------------------------------------------- |
+| Web Interface | Port listening (8081) | Success: "The web interface is ready" / Error: "The web interface is not ready" |
 
 ---
 
 ## Dependencies
 
-None.
-
----
-
-## Limitations and Differences
-
-1. **No meaningful functionality** — this is a reference/template package only
-
----
-
-## What Is Unchanged from Upstream
-
-The service is identical to upstream. There are no modifications.
+| Dependency   | Required | Version      | Purpose                              |
+| ------------ | -------- | ------------ | ------------------------------------ |
+| File Browser | Optional | >=2.62.2:0   | Save downloads to File Browser       |
 
 ---
 
@@ -128,14 +113,19 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for build instructions and development wo
 ## Quick Reference for AI Consumers
 
 ```yaml
-package_id: hello-world
-image: ghcr.io/start9labs/hello-world
-architectures: [x86_64, aarch64, riscv64]
+package_id: metube
+image: alexta69/metube
+architectures: [x86_64, aarch64]
 volumes:
-  main: /data
+  main: /config
+  downloads: /downloads
 ports:
-  ui: 80
-dependencies: none
-startos_managed_env_vars: none
-actions: none
+  ui: 8081
+dependencies:
+  filebrowser: optional, >=2.62.2:0
+actions:
+  download-destination: select download destination (local or filebrowser)
+startos_managed_env_vars:
+  DOWNLOAD_DIR: set per download destination selection
+  TEMP_DIR: set same as DOWNLOAD_DIR
 ```
