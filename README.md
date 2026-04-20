@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="icon.svg" alt="MeTube Logo" width="21%">
+  <img src="icon.png" alt="MeTube Logo" width="21%">
 </p>
 
 # MeTube on StartOS
